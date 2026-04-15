@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import bagongPilipinasLogo from '../assets/Bagong Pilipinas Logo.png'
 import dmwLogo from '../assets/DMW Logo.png'
 import owwaLogo from '../assets/OWWA Regional Logo.png'
-import { buildStorageUrl, getPublicSystemSettings } from '../services/adminApi'
+import { getPublicSystemSettings, publicStorageUrlFromPaths } from '../services/adminApi'
 
 const BRAND_NAME = 'Overseas Workers Welfare Administration - Region 9'
 const BRAND_TAGLINE = 'Integrated Programs and Services Monitoring System'
@@ -37,16 +37,15 @@ const Topbar = ({ user, onToggleSidebar, onLogout }) => {
     getPublicSystemSettings()
       .then((data) => {
         if (!mounted) return
-        const logoPaths = [data?.logo_primary_url, data?.logo_secondary_url, data?.logo_tertiary_url]
-          .filter(Boolean)
-        const fallbackPaths = [data?.logo_primary_path, data?.logo_secondary_path, data?.logo_tertiary_path]
-          .filter(Boolean)
-          .map((path) => buildStorageUrl(path))
-          .filter(Boolean)
+        const logoPaths = [
+          publicStorageUrlFromPaths(data?.logo_primary_path, data?.logo_primary_url),
+          publicStorageUrlFromPaths(data?.logo_secondary_path, data?.logo_secondary_url),
+          publicStorageUrlFromPaths(data?.logo_tertiary_path, data?.logo_tertiary_url),
+        ].filter(Boolean)
         const next = {
           topbar_title: data?.app_name || BRAND_NAME,
           topbar_subtitle: BRAND_TAGLINE,
-          logos: logoPaths.length ? logoPaths : (fallbackPaths.length ? fallbackPaths : [bagongPilipinasLogo, dmwLogo, owwaLogo]),
+          logos: logoPaths.length ? logoPaths : [bagongPilipinasLogo, dmwLogo, owwaLogo],
         }
         topbarBrandingCache = next
         setBranding(next)
@@ -57,16 +56,15 @@ const Topbar = ({ user, onToggleSidebar, onLogout }) => {
       getPublicSystemSettings()
         .then((data) => {
           if (!mounted) return
-          const logoPaths = [data?.logo_primary_url, data?.logo_secondary_url, data?.logo_tertiary_url]
-            .filter(Boolean)
-          const fallbackPaths = [data?.logo_primary_path, data?.logo_secondary_path, data?.logo_tertiary_path]
-            .filter(Boolean)
-            .map((path) => buildStorageUrl(path))
-            .filter(Boolean)
+          const logoPaths = [
+            publicStorageUrlFromPaths(data?.logo_primary_path, data?.logo_primary_url),
+            publicStorageUrlFromPaths(data?.logo_secondary_path, data?.logo_secondary_url),
+            publicStorageUrlFromPaths(data?.logo_tertiary_path, data?.logo_tertiary_url),
+          ].filter(Boolean)
           const next = {
             topbar_title: data?.app_name || BRAND_NAME,
             topbar_subtitle: BRAND_TAGLINE,
-            logos: logoPaths.length ? logoPaths : (fallbackPaths.length ? fallbackPaths : [bagongPilipinasLogo, dmwLogo, owwaLogo]),
+            logos: logoPaths.length ? logoPaths : [bagongPilipinasLogo, dmwLogo, owwaLogo],
           }
           topbarBrandingCache = next
           setBranding(next)

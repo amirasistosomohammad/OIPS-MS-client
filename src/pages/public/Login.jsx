@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FaEye, FaEyeSlash, FaLock, FaSpinner, FaUser } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import { login as loginRequest } from '../../services/auth'
-import { buildStorageUrl, getPublicSystemSettings } from '../../services/adminApi'
+import { getPublicSystemSettings, publicStorageUrlFromPaths } from '../../services/adminApi'
 import backgroundImage from '../../assets/background_image.png'
 import bagongPilipinasLogo from '../../assets/Bagong Pilipinas Logo.png'
 import dmwLogo from '../../assets/DMW Logo.png'
@@ -50,17 +50,17 @@ export default function Login({ onLoginSuccess }) {
     getPublicSystemSettings()
       .then((data) => {
         if (!mounted) return
-        const logos = [data?.logo_primary_url, data?.logo_secondary_url, data?.logo_tertiary_url]
-          .filter(Boolean)
-        const fallbackLogos = [data?.logo_primary_path, data?.logo_secondary_path, data?.logo_tertiary_path]
-          .filter(Boolean)
-          .map((path) => buildStorageUrl(path))
-          .filter(Boolean)
+        const logos = [
+          publicStorageUrlFromPaths(data?.logo_primary_path, data?.logo_primary_url),
+          publicStorageUrlFromPaths(data?.logo_secondary_path, data?.logo_secondary_url),
+          publicStorageUrlFromPaths(data?.logo_tertiary_path, data?.logo_tertiary_url),
+        ].filter(Boolean)
         setBranding({
           title: data?.app_name || 'Overseas Workers Welfare Administration - Region 9',
           subtitle: 'Integrated Programs and Services Monitoring System',
-          logos: logos.length ? logos : (fallbackLogos.length ? fallbackLogos : [bagongPilipinasLogo, dmwLogo, owwaLogo]),
-          authBackground: data?.auth_background_url || (data?.auth_background_path ? buildStorageUrl(data.auth_background_path) : backgroundImage),
+          logos: logos.length ? logos : [bagongPilipinasLogo, dmwLogo, owwaLogo],
+          authBackground:
+            publicStorageUrlFromPaths(data?.auth_background_path, data?.auth_background_url) || backgroundImage,
         })
       })
       .catch(() => {})

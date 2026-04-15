@@ -41,6 +41,15 @@ export function buildStorageUrl(storagePath) {
   return `${origin}/storage/${normalizedPath}`
 }
 
+/** Prefer resolving from path + VITE_LARAVEL_API origin so branding works if the API still has a wrong APP_URL. */
+export function publicStorageUrlFromPaths(storagePath, apiAbsoluteUrlFallback) {
+  if (storagePath) {
+    const fromPath = buildStorageUrl(storagePath)
+    if (fromPath) return fromPath
+  }
+  return apiAbsoluteUrlFallback || null
+}
+
 export async function changeMyPassword(payload) {
   const response = await fetch(`${API_BASE_URL}/user/password`, {
     method: 'PUT',

@@ -14,7 +14,7 @@ import {
 } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import {
-  buildStorageUrl,
+  publicStorageUrlFromPaths,
   changeMyPassword,
   downloadBackup,
   getBackupList,
@@ -378,10 +378,18 @@ export default function SystemSettingsPage({ user }) {
   }
 
   const withCache = (url) => (url ? `${url}${url.includes('?') ? '&' : '?'}t=${systemSettings.logo_updated_at || systemSettings.auth_background_updated_at || 'init'}` : null)
-  const logoPrimaryUrl = withCache(systemSettings.logo_primary_url || (systemSettings.logo_primary_path ? buildStorageUrl(systemSettings.logo_primary_path) : null))
-  const logoSecondaryUrl = withCache(systemSettings.logo_secondary_url || (systemSettings.logo_secondary_path ? buildStorageUrl(systemSettings.logo_secondary_path) : null))
-  const logoTertiaryUrl = withCache(systemSettings.logo_tertiary_url || (systemSettings.logo_tertiary_path ? buildStorageUrl(systemSettings.logo_tertiary_path) : null))
-  const bgUrl = withCache(systemSettings.auth_background_url || (systemSettings.auth_background_path ? buildStorageUrl(systemSettings.auth_background_path) : null))
+  const logoPrimaryUrl = withCache(
+    publicStorageUrlFromPaths(systemSettings.logo_primary_path, systemSettings.logo_primary_url),
+  )
+  const logoSecondaryUrl = withCache(
+    publicStorageUrlFromPaths(systemSettings.logo_secondary_path, systemSettings.logo_secondary_url),
+  )
+  const logoTertiaryUrl = withCache(
+    publicStorageUrlFromPaths(systemSettings.logo_tertiary_path, systemSettings.logo_tertiary_url),
+  )
+  const bgUrl = withCache(
+    publicStorageUrlFromPaths(systemSettings.auth_background_path, systemSettings.auth_background_url),
+  )
   const logoSlots = [
     { key: 'primary', label: 'Logo 1', url: logoPrimaryUrl, inputId: 'settings-logo-primary' },
     { key: 'secondary', label: 'Logo 2', url: logoSecondaryUrl, inputId: 'settings-logo-secondary' },
