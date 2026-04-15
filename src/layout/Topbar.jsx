@@ -134,6 +134,16 @@ const Topbar = ({ user, onToggleSidebar, onLogout }) => {
             <li>
               <span className="dropdown-item small text-muted py-1">{user?.username || user?.email || 'No username'}</span>
             </li>
+            <li>
+              <span className="dropdown-item small text-muted py-1">
+                {[
+                  (user?.role === 'admin' || user?.username === 'admin@admin.com') ? 'Administrator' : String(user?.role || 'User').replace(/_/g, ' '),
+                  user?.field_office,
+                ]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </span>
+            </li>
             <li className="dropdown-separator" />
             <li>
               <button type="button" className="dropdown-item custom-dropdown-item logout-item" onClick={handleLogout}>

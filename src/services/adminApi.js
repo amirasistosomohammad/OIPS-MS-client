@@ -25,6 +25,53 @@ async function handleResponse(response) {
   return data
 }
 
+function parseFilenameFromContentDisposition(value) {
+  if (!value) return null
+  const raw = String(value)
+  const match = raw.match(/filename\\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i)
+  const encoded = match?.[1] || match?.[2]
+  if (!encoded) return null
+  try {
+    return decodeURIComponent(encoded)
+  } catch {
+    return encoded
+  }
+}
+
+async function downloadBinaryResponse(url, { accept } = {}) {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: accept || 'application/octet-stream',
+      ...(getRawToken() ? { Authorization: `Bearer ${getRawToken()}` } : {}),
+    },
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    const error = new Error(data?.message || 'Download request failed.')
+    error.status = response.status
+    throw error
+  }
+  const blob = await response.blob()
+  const filename = parseFilenameFromContentDisposition(response.headers.get('content-disposition'))
+  return { blob, filename }
+}
+
+export function triggerBrowserDownload(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename || 'download'
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 function getRawToken() {
   return getStoredSession()?.token || ''
 }
@@ -435,4 +482,24 @@ export async function getReportSummary(params = {}) {
   const response = await fetch(`${API_BASE_URL}/reports/summary${queryString ? `?${queryString}` : ''}`, { headers: getHeaders() })
   const data = await handleResponse(response)
   return data.data || { enrollments_by_program: [], updates_by_status: [] }
+}
+
+export async function downloadReportSummaryExcel(params = {}) {
+  const query = new URLSearchParams()
+  if (params.from) query.set('from', params.from)
+  if (params.to) query.set('to', params.to)
+  const qs = query.toString()
+  return downloadBinaryResponse(`${API_BASE_URL}/reports/summary/export/excel${qs ? `?${qs}` : ''}`, {
+    accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+}
+
+export async function downloadReportSummaryPdf(params = {}) {
+  const query = new URLSearchParams()
+  if (params.from) query.set('from', params.from)
+  if (params.to) query.set('to', params.to)
+  const qs = query.toString()
+  return downloadBinaryResponse(`${API_BASE_URL}/reports/summary/export/pdf${qs ? `?${qs}` : ''}`, {
+    accept: 'application/pdf',
+  })
 }

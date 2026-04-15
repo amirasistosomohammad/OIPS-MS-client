@@ -27,6 +27,9 @@ import {
   listPrograms,
   getDashboardData,
   getReportSummary,
+  downloadReportSummaryExcel,
+  downloadReportSummaryPdf,
+  triggerBrowserDownload,
   listStatusOptions,
   listUsers,
   markNotificationRead,
@@ -309,6 +312,39 @@ function humanizeRecordKey(key) {
     .replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
+function isPlainObject(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function renderStructuredRecordValue(value, keyPath = '') {
+  if (value === null || value === undefined || value === '') return '-'
+  if (Array.isArray(value)) {
+    if (!value.length) return '-'
+    return (
+      <ul className="record-value-list">
+        {value.map((item, index) => (
+          <li key={`${keyPath}-${index}`}>{renderStructuredRecordValue(item, `${keyPath}.${index}`)}</li>
+        ))}
+      </ul>
+    )
+  }
+  if (isPlainObject(value)) {
+    const entries = Object.entries(value)
+    if (!entries.length) return '-'
+    return (
+      <div className="record-value-object">
+        {entries.map(([nestedKey, nestedValue]) => (
+          <div className="record-value-object-row" key={`${keyPath}.${nestedKey}`}>
+            <span className="record-value-object-key">{humanizeRecordKey(nestedKey)}</span>
+            <div className="record-value-object-value">{renderStructuredRecordValue(nestedValue, `${keyPath}.${nestedKey}`)}</div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return formatRecordValue(value, keyPath)
+}
+
 function formatRecordValue(value, key = '') {
   if (value === null || value === undefined || value === '') return '-'
   const keyLower = String(key).toLowerCase()
@@ -377,7 +413,7 @@ function RecordDetails({ record, eyebrow = 'Record overview', heroIconClass = 'f
             {entries.map(([key, value]) => (
               <div className="beneficiary-details-item" key={key}>
                 <span>{humanizeRecordKey(key)}</span>
-                <p>{formatRecordValue(value, key)}</p>
+                <div className="beneficiary-details-item-value">{renderStructuredRecordValue(value, key)}</div>
               </div>
             ))}
           </div>
@@ -765,14 +801,13 @@ export function UserManagementPage() {
     const keyword = search.trim().toLowerCase()
     if (!keyword) return rows
     return rows.filter((row) =>
-      [row.name, row.username, row.role, row.field_office].some((value) => String(value || '').toLowerCase().includes(keyword)),
+      [row.name, row.username, row.field_office].some((value) => String(value || '').toLowerCase().includes(keyword)),
     )
   }, [users, search])
 
   const columns = [
     { key: 'name', label: 'Full Name' },
     { key: 'username', label: 'Username' },
-    { key: 'role', label: 'Role' },
     { key: 'field_office', label: 'Field Office' },
   ]
 
@@ -814,7 +849,6 @@ export function UserManagementPage() {
       name: String(payload.name ?? '').trim(),
       username: String(payload.username ?? '').trim(),
       field_office: String(payload.field_office ?? '').trim() || undefined,
-      role: 'admin',
     }
     if (editItem) {
       const pw = String(payload.password ?? '').trim()
@@ -876,7 +910,7 @@ export function UserManagementPage() {
         inputId={userSearchId}
         search={search}
         onSearchChange={setSearch}
-        placeholder="Search by name, username, role, or field office..."
+        placeholder="Search by name, username, or field office..."
       />
       <DataTable
         columns={columns}
@@ -899,7 +933,7 @@ export function UserManagementPage() {
         subtitle="Review account details and field office assignment."
         onClose={() => setViewItem(null)}
       >
-        <RecordDetails record={viewItem} eyebrow="System user" heroIconClass="fas fa-user-shield" />
+        <RecordDetails record={viewItem} eyebrow="System user" heroIconClass="fas fa-user-shield" hideKeys={['id', 'email', 'role']} />
       </SystemPortalModal>
       <FormPortalModal
         isOpen={formOpen}
@@ -1263,7 +1297,30 @@ export function ActivityLogsPage() {
   const columns = [
     { key: 'action_time', label: 'Date & Time', minWidth: 170 },
     { key: 'action_type', label: 'Action', minWidth: 100 },
-    { key: 'table_name', label: 'Table', minWidth: 110 },
+    {
+      key: 'performed_by',
+      label: 'Performed By',
+      minWidth: 200,
+      render: (row) => {
+        const name = row?.user?.name || ''
+        const username = row?.user?.email || ''
+        const label = [name, username && username !== name ? username : null].filter(Boolean).join(' • ')
+        return label || '-'
+      },
+    },
+    {
+      key: 'target',
+      label: 'Target',
+      minWidth: 220,
+      render: (row) => {
+        const table = String(row?.table_name || '').trim()
+        const values = row?.new_values || row?.old_values || {}
+        const title = values?.name || values?.program_name || values?.beneficiary_name || values?.title || values?.username || null
+        const recordId = row?.record_id != null ? `#${row.record_id}` : null
+        const left = [table, recordId].filter(Boolean).join(' ')
+        return [left, title].filter(Boolean).join(' — ') || '-'
+      },
+    },
     { key: 'description', label: 'Description', minWidth: 260 },
   ]
 
@@ -1271,7 +1328,18 @@ export function ActivityLogsPage() {
     const keyword = search.trim().toLowerCase()
     if (!keyword) return logs
     return logs.filter((row) =>
-      [row.action_type, row.table_name, row.description, row.action_time].some((value) => String(value || '').toLowerCase().includes(keyword)),
+      [
+        row.action_type,
+        row.table_name,
+        row.description,
+        row.action_time,
+        row?.user?.name,
+        row?.user?.email,
+        row?.new_values?.name,
+        row?.new_values?.username,
+        row?.old_values?.name,
+        row?.old_values?.username,
+      ].some((value) => String(value || '').toLowerCase().includes(keyword)),
     )
   }, [logs, search])
 
@@ -2425,6 +2493,7 @@ export function ReportsAnalyticsPage() {
   const [filters, setFilters] = useState({ from: '', to: '' })
   const [report, setReport] = useState({ enrollments_by_program: [], updates_by_status: [] })
   const [isLoading, setIsLoading] = useState(false)
+  const [isExporting, setIsExporting] = useState({ pdf: false, excel: false })
 
   const loadReport = async (nextFilters = filters) => {
     setIsLoading(true)
@@ -2454,6 +2523,32 @@ export function ReportsAnalyticsPage() {
     { key: 'total', label: 'Update Count' },
     { key: 'total_amount', label: 'Total Amount Received', render: (row) => formatPhilippinePeso(row.total_amount) },
   ]
+
+  const handleExportExcel = async () => {
+    setIsExporting((prev) => ({ ...prev, excel: true }))
+    try {
+      const { blob, filename } = await downloadReportSummaryExcel(filters)
+      triggerBrowserDownload(blob, filename || 'report_summary.xlsx')
+      toast.success('Excel report downloaded.')
+    } catch (error) {
+      toast.error(error.message || 'Unable to export Excel report.')
+    } finally {
+      setIsExporting((prev) => ({ ...prev, excel: false }))
+    }
+  }
+
+  const handleExportPdf = async () => {
+    setIsExporting((prev) => ({ ...prev, pdf: true }))
+    try {
+      const { blob, filename } = await downloadReportSummaryPdf(filters)
+      triggerBrowserDownload(blob, filename || 'report_summary.pdf')
+      toast.success('PDF report downloaded.')
+    } catch (error) {
+      toast.error(error.message || 'Unable to export PDF report.')
+    } finally {
+      setIsExporting((prev) => ({ ...prev, pdf: false }))
+    }
+  }
 
   return (
     <Motion.div className="page-enter" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, ease: 'easeOut' }}>
@@ -2497,9 +2592,17 @@ export function ReportsAnalyticsPage() {
               />
             </div>
             <div className="col-md-4">
-              <button type="button" className="btn btn-primary module-registry-add-btn w-100" onClick={() => loadReport(filters)} disabled={isLoading}>
-                {isLoading ? 'Loading...' : 'Generate Summary'}
-              </button>
+              <div className="reports-action-wrap">
+                <button type="button" className="btn module-registry-add-btn reports-action-btn reports-action-btn-generate" onClick={() => loadReport(filters)} disabled={isLoading || isExporting.pdf || isExporting.excel}>
+                  {isLoading ? 'Loading...' : 'Generate Summary'}
+                </button>
+                <button type="button" className="btn module-registry-add-btn reports-action-btn reports-action-btn-excel" onClick={handleExportExcel} disabled={isLoading || isExporting.excel} aria-busy={isExporting.excel}>
+                  {isExporting.excel ? 'Exporting…' : 'Export Excel'}
+                </button>
+                <button type="button" className="btn module-registry-add-btn reports-action-btn reports-action-btn-pdf" onClick={handleExportPdf} disabled={isLoading || isExporting.pdf} aria-busy={isExporting.pdf}>
+                  {isExporting.pdf ? 'Exporting…' : 'Export PDF'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

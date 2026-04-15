@@ -2908,6 +2908,92 @@ body.login-page-active #root {
   font-size: 0.76rem;
 }
 
+.reports-action-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.42rem;
+  width: 100%;
+}
+
+.reports-action-btn.btn.module-registry-add-btn {
+  min-height: 1.95rem;
+  padding: 0.28rem 0.62rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1.08;
+  font-weight: 600;
+  white-space: nowrap;
+  border-width: 1px;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.reports-action-btn.btn.module-registry-add-btn:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+}
+
+.reports-action-btn-generate.btn.module-registry-add-btn {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #fff !important;
+}
+
+.reports-action-btn-generate.btn.module-registry-add-btn:hover:not(:disabled) {
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.reports-action-btn-generate.btn.module-registry-add-btn:active:not(:disabled) {
+  background: #1e3a8a !important;
+  border-color: #1e3a8a !important;
+  transform: translateY(0);
+}
+
+.reports-action-btn-excel.btn.module-registry-add-btn {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #fff !important;
+}
+
+.reports-action-btn-excel.btn.module-registry-add-btn:hover:not(:disabled) {
+  background: #166534 !important;
+  border-color: #166534 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.reports-action-btn-excel.btn.module-registry-add-btn:active:not(:disabled) {
+  background: #14532d !important;
+  border-color: #14532d !important;
+  transform: translateY(0);
+}
+
+.reports-action-btn-pdf.btn.module-registry-add-btn {
+  background: #be123c !important;
+  border-color: #be123c !important;
+  color: #fff !important;
+}
+
+.reports-action-btn-pdf.btn.module-registry-add-btn:hover:not(:disabled) {
+  background: #9f1239 !important;
+  border-color: #9f1239 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.reports-action-btn-pdf.btn.module-registry-add-btn:active:not(:disabled) {
+  background: #881337 !important;
+  border-color: #881337 !important;
+  transform: translateY(0);
+}
+
 /* Disable inherited card hover lift on beneficiary header shell */
 .module-registry-shell:hover {
   transform: none !important;
@@ -2926,6 +3012,23 @@ body.login-page-active #root {
   .module-registry-add-btn svg {
     font-size: 0.7rem;
   }
+
+  .reports-action-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.42rem;
+  }
+
+  .reports-action-btn-generate {
+    grid-column: 1 / -1;
+  }
+
+  .reports-action-btn.btn.module-registry-add-btn {
+    width: 100%;
+    min-height: 1.86rem;
+    font-size: 0.75rem;
+    padding: 0.24rem 0.5rem;
+  }
 }
 
 @media (min-width: 576px) and (max-width: 991.98px) {
@@ -2933,6 +3036,14 @@ body.login-page-active #root {
     min-height: 2rem;
     padding: 0.32rem 0.72rem;
     font-size: 0.82rem;
+  }
+
+  .reports-action-wrap {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reports-action-btn-generate {
+    grid-column: 1 / -1;
   }
 }
 
@@ -3476,6 +3587,48 @@ body.login-page-active #root {
   font-size: 0.9rem;
   color: #0f172a;
   font-weight: 600;
+}
+
+.beneficiary-details-item-value {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.record-value-object {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.record-value-object-row {
+  border: 1px solid #d8e3f2;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  background: #ffffff;
+}
+
+.record-value-object-key {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.record-value-object-value {
+  color: #0f172a;
+  font-size: 0.84rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.record-value-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
 }
 
 @media (max-width: 767.98px) {

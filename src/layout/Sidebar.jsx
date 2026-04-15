@@ -18,6 +18,8 @@ const Sidebar = ({ user, onCloseSidebar, unreadDueNotificationCount = 0 }) => {
   }
 
   const isAdmin = user?.role === 'admin' || user?.username === 'admin@admin.com'
+  const roleLabel = isAdmin ? 'Administrator' : String(user?.role || 'User').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const footerMeta = [roleLabel, user?.field_office].filter(Boolean).join(' • ')
 
   const menuSections = [
     {
@@ -28,6 +30,7 @@ const Sidebar = ({ user, onCloseSidebar, unreadDueNotificationCount = 0 }) => {
         { icon: 'fas fa-link', label: 'Program Enrollments', href: '/enrollments' },
         { icon: 'fas fa-clipboard-check', label: 'Program Updates', href: '/program-updates' },
         { icon: 'fas fa-bell', label: 'Due Notifications', href: '/notifications' },
+        { icon: 'fas fa-chart-line', label: 'Reports', href: '/reports' },
       ],
     },
     {
@@ -41,7 +44,6 @@ const Sidebar = ({ user, onCloseSidebar, unreadDueNotificationCount = 0 }) => {
             items: [
               { icon: 'fas fa-user-shield', label: 'User Management', href: '/user-management' },
               { icon: 'fas fa-clipboard-list', label: 'Activity Logs', href: '/activity-logs' },
-              { icon: 'fas fa-chart-line', label: 'Reports', href: '/reports' },
               { icon: 'fas fa-cog', label: 'System Settings', href: '/system-settings' },
             ],
           },
@@ -90,7 +92,7 @@ const Sidebar = ({ user, onCloseSidebar, unreadDueNotificationCount = 0 }) => {
       <div className="sb-sidenav-footer">
         <div className="small">Logged in as</div>
         <div className="user-name">{user?.name || user?.username || 'User'}</div>
-        <div className="small text-white-50">{isAdmin ? 'System Administrator' : 'System User'}</div>
+        <div className="small text-white-50">{footerMeta || 'User'}</div>
       </div>
     </nav>
   )
