@@ -38,7 +38,12 @@ export function buildStorageUrl(storagePath) {
   const normalizedPath = String(storagePath).replace(/^\/+/, '')
   const origin = getStorageOrigin()
   if (!origin) return null
-  return `${origin}/storage/${normalizedPath}`
+  const encodedPath = normalizedPath
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+  return `${origin}/api/assets/${encodedPath}`
 }
 
 /** Prefer resolving from path + VITE_LARAVEL_API origin so branding works if the API still has a wrong APP_URL. */
