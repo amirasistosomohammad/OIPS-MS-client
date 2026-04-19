@@ -1904,7 +1904,7 @@ export function ProgramEnrollmentsPage() {
     { name: 'date_enrolled', label: 'Date Enrolled', type: 'date' },
     {
       name: 'enrollment_status',
-      label: 'Enrollment Status',
+      label: isBalikPinasProgram ? 'Membership Status' : 'Enrollment Status',
       type: 'select',
       required: true,
       options: isBalikPinasProgram
