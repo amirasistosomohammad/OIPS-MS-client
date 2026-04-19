@@ -1828,7 +1828,10 @@ export function ProgramEnrollmentsPage() {
   const programOptions = programs.map((item) => ({ value: item.id, label: `${item.program_code} - ${item.program_name}` }))
 
   const columns = [
-    { key: 'beneficiary_name', label: 'Beneficiary' },
+    { key: 'beneficiary_last_name', label: 'Last Name' },
+    { key: 'beneficiary_first_name', label: 'First Name' },
+    { key: 'beneficiary_middle_name', label: 'Middle Name' },
+    { key: 'beneficiary_contact_number', label: 'Number' },
     { key: 'program_code', label: 'Program Code' },
     { key: 'batch', label: 'Batch' },
     { key: 'enrollment_status', label: 'Status' },
@@ -1840,9 +1843,23 @@ export function ProgramEnrollmentsPage() {
     const keyword = search.trim().toLowerCase()
     if (!keyword) return rows
     return rows.filter((row) =>
-      [row.beneficiary_name, row.program_name, row.program_code, row.batch, row.enrollment_status].some((value) => String(value || '').toLowerCase().includes(keyword)),
+      [
+        row.beneficiary_name,
+        row.beneficiary_last_name,
+        row.beneficiary_first_name,
+        row.beneficiary_middle_name,
+        row.beneficiary_contact_number,
+        row.program_name,
+        row.program_code,
+        row.batch,
+        row.enrollment_status,
+      ].some((value) => String(value || '').toLowerCase().includes(keyword)),
     )
   }, [rows, search])
+
+  const selectedProgramId = Number(enrollmentFormState.program_id || editItem?.program_id || 0)
+  const selectedProgram = programs.find((item) => Number(item.id) === selectedProgramId)
+  const isBalikPinasProgram = selectedProgram?.program_code === 'BPBH'
 
   const fields = [
     {
@@ -1890,26 +1907,46 @@ export function ProgramEnrollmentsPage() {
       label: 'Enrollment Status',
       type: 'select',
       required: true,
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'completed', label: 'Completed' },
-        { value: 'suspended', label: 'Suspended' },
-      ],
+      options: isBalikPinasProgram
+        ? [
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' },
+          ]
+        : [
+            { value: 'active', label: 'Active' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'suspended', label: 'Suspended' },
+          ],
     },
     { name: 'notes', label: 'Notes' },
   ]
-
-  const selectedProgramId = Number(enrollmentFormState.program_id || editItem?.program_id || 0)
   const dynamicTemplateFields = templateRows
     .filter((item) => item.program_id === selectedProgramId && item.field_scope === 'input')
     .sort((a, b) => a.display_order - b.display_order)
-    .map((item) => ({
-      name: `dynamic_${item.field_key}`,
-      label: item.field_label,
-      type: item.field_type === 'textarea' ? 'textarea' : item.field_type === 'date' ? 'date' : item.field_type === 'number' ? 'number' : 'text',
-      required: Boolean(item.is_required),
-      colClass: 'col-md-6',
-    }))
+    .map((item) => {
+      const isBpbhBusinessStatus = isBalikPinasProgram && item.field_key === 'business_status'
+      return {
+        name: `dynamic_${item.field_key}`,
+        label: item.field_label,
+        type: isBpbhBusinessStatus
+          ? 'select'
+          : item.field_type === 'textarea'
+            ? 'textarea'
+            : item.field_type === 'date'
+              ? 'date'
+              : item.field_type === 'number'
+                ? 'number'
+                : 'text',
+        options: isBpbhBusinessStatus
+          ? [
+              { value: 'OPERATIONAL', label: 'Operational' },
+              { value: 'NON_OPERATIONAL', label: 'Non Operational' },
+            ]
+          : undefined,
+        required: Boolean(item.is_required),
+        colClass: 'col-md-6',
+      }
+    })
 
   const formFields = [...fields, ...dynamicTemplateFields]
 
@@ -2105,7 +2142,7 @@ export function ProgramUpdatesPage() {
   const fields = useMemo(() => {
     const baseFields = [
       { name: 'program_enrollment_id', label: 'Enrollment', type: 'select', required: true, options: enrollmentOptions, colClass: 'col-12' },
-      { name: 'status_option_id', label: 'Status', type: 'select', options: statusOptionItems, colClass: 'col-12' },
+      { name: 'status_option_id', label: 'Status', type: 'select', required: true, options: statusOptionItems, colClass: 'col-12' },
       { name: 'update_date', label: 'Update Date', type: 'date', required: true },
       { name: 'amount_received', label: 'Amount Received', type: 'number' },
       { name: 'remarks', label: 'Remarks' },
@@ -2113,13 +2150,30 @@ export function ProgramUpdatesPage() {
     const dynamicUpdateFields = templateRows
       .filter((item) => item.program_id === selectedProgramId && item.field_scope === 'update')
       .sort((a, b) => a.display_order - b.display_order)
-      .map((item) => ({
-        name: `dynamic_${item.field_key}`,
-        label: item.field_label,
-        type: item.field_type === 'textarea' ? 'textarea' : item.field_type === 'date' ? 'date' : item.field_type === 'number' ? 'number' : 'text',
-        required: Boolean(item.is_required),
-        colClass: 'col-md-6',
-      }))
+      .map((item) => {
+        const isBpbhBusinessStatus = selectedEnrollment?.program_code === 'BPBH' && item.field_key === 'business_status'
+        return {
+          name: `dynamic_${item.field_key}`,
+          label: item.field_label,
+          type: isBpbhBusinessStatus
+            ? 'select'
+            : item.field_type === 'textarea'
+              ? 'textarea'
+              : item.field_type === 'date'
+                ? 'date'
+                : item.field_type === 'number'
+                  ? 'number'
+                  : 'text',
+          options: isBpbhBusinessStatus
+            ? [
+                { value: 'OPERATIONAL', label: 'Operational' },
+                { value: 'NON_OPERATIONAL', label: 'Non Operational' },
+              ]
+            : undefined,
+          required: Boolean(item.is_required),
+          colClass: 'col-md-6',
+        }
+      })
     return [...baseFields, ...dynamicUpdateFields]
   }, [enrollmentOptions, statusOptionItems, templateRows, selectedProgramId])
 
